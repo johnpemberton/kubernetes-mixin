@@ -11,6 +11,7 @@ local template = grafana.template;
         query='label_values(kube_pod_info, %s)' % $._config.clusterLabel,
         current='',
         hide=if $._config.showMultiCluster then '' else '2',
+        multi=if $._config.showMultiCluster then true else false,
         refresh=1,
         includeAll=false,
         sort=1
@@ -20,7 +21,7 @@ local template = grafana.template;
       template.new(
         name='node',
         datasource='$datasource',
-        query='label_values(kube_pod_info{%(clusterLabel)s="$cluster"}, node)' % $._config.clusterLabel,
+        query='label_values(kube_pod_info{%(clusterSelector)s}, node)' % $._config.clusterSelector,
         current='',
         hide='',
         refresh=1,
@@ -44,7 +45,7 @@ local template = grafana.template;
         g.row('CPU Usage')
         .addPanel(
           g.panel('CPU Usage') +
-          g.queryPanel('sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{%(clusterLabel)s="$cluster", node=~"$node"}) by (pod)' % $._config, '{{pod}}') +
+          g.queryPanel('sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{%(clusterSelector)s, node=~"$node"}) by (pod)' % $._config, '{{pod}}') +
           g.stack,
         )
       )
@@ -53,11 +54,11 @@ local template = grafana.template;
         .addPanel(
           g.panel('CPU Quota') +
           g.tablePanel([
-            'sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{%(clusterLabel)s="$cluster", node=~"$node"}) by (pod)' % $._config,
-            'sum(kube_pod_container_resource_requests_cpu_cores{%(clusterLabel)s="$cluster", node=~"$node"}) by (pod)' % $._config,
-            'sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{%(clusterLabel)s="$cluster", node=~"$node"}) by (pod) / sum(kube_pod_container_resource_requests_cpu_cores{%(clusterLabel)s="$cluster", node=~"$node"}) by (pod)' % $._config,
-            'sum(kube_pod_container_resource_limits_cpu_cores{%(clusterLabel)s="$cluster", node=~"$node"}) by (pod)' % $._config,
-            'sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{%(clusterLabel)s="$cluster", node=~"$node"}) by (pod) / sum(kube_pod_container_resource_limits_cpu_cores{%(clusterLabel)s="$cluster", node=~"$node"}) by (pod)' % $._config,
+            'sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{%(clusterSelector)s, node=~"$node"}) by (pod)' % $._config,
+            'sum(kube_pod_container_resource_requests_cpu_cores{%(clusterSelector)s, node=~"$node"}) by (pod)' % $._config,
+            'sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{%(clusterSelector)s, node=~"$node"}) by (pod) / sum(kube_pod_container_resource_requests_cpu_cores{%(clusterSelector)s, node=~"$node"}) by (pod)' % $._config,
+            'sum(kube_pod_container_resource_limits_cpu_cores{%(clusterSelector)s, node=~"$node"}) by (pod)' % $._config,
+            'sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{%(clusterSelector)s, node=~"$node"}) by (pod) / sum(kube_pod_container_resource_limits_cpu_cores{%(clusterSelector)s, node=~"$node"}) by (pod)' % $._config,
           ], tableStyles {
             'Value #A': { alias: 'CPU Usage' },
             'Value #B': { alias: 'CPU Requests' },
@@ -72,7 +73,7 @@ local template = grafana.template;
         .addPanel(
           g.panel('Memory Usage (w/o cache)') +
           // Like above, without page cache
-          g.queryPanel('sum(node_namespace_pod_container:container_memory_working_set_bytes{%(clusterLabel)s="$cluster", node=~"$node", container!=""}) by (pod)' % $._config, '{{pod}}') +
+          g.queryPanel('sum(node_namespace_pod_container:container_memory_working_set_bytes{%(clusterSelector)s, node=~"$node", container!=""}) by (pod)' % $._config, '{{pod}}') +
           g.stack +
           { yaxes: g.yaxes('bytes') },
         )
@@ -82,14 +83,14 @@ local template = grafana.template;
         .addPanel(
           g.panel('Memory Quota') +
           g.tablePanel([
-            'sum(node_namespace_pod_container:container_memory_working_set_bytes{%(clusterLabel)s="$cluster", node=~"$node",container!=""}) by (pod)' % $._config,
-            'sum(kube_pod_container_resource_requests_memory_bytes{%(clusterLabel)s="$cluster", node=~"$node"}) by (pod)' % $._config,
-            'sum(node_namespace_pod_container:container_memory_working_set_bytes{%(clusterLabel)s="$cluster", node=~"$node",container!=""}) by (pod) / sum(kube_pod_container_resource_requests_memory_bytes{node=~"$node"}) by (pod)' % $._config,
-            'sum(kube_pod_container_resource_limits_memory_bytes{%(clusterLabel)s="$cluster", node=~"$node"}) by (pod)' % $._config,
-            'sum(node_namespace_pod_container:container_memory_working_set_bytes{%(clusterLabel)s="$cluster", node=~"$node",container!=""}) by (pod) / sum(kube_pod_container_resource_limits_memory_bytes{node=~"$node"}) by (pod)' % $._config,
-            'sum(node_namespace_pod_container:container_memory_rss{%(clusterLabel)s="$cluster", node=~"$node",container!=""}) by (pod)' % $._config,
-            'sum(node_namespace_pod_container:container_memory_cache{%(clusterLabel)s="$cluster", node=~"$node",container!=""}) by (pod)' % $._config,
-            'sum(node_namespace_pod_container:container_memory_swap{%(clusterLabel)s="$cluster", node=~"$node",container!=""}) by (pod)' % $._config,
+            'sum(node_namespace_pod_container:container_memory_working_set_bytes{%(clusterSelector)s, node=~"$node",container!=""}) by (pod)' % $._config,
+            'sum(kube_pod_container_resource_requests_memory_bytes{%(clusterSelector)s, node=~"$node"}) by (pod)' % $._config,
+            'sum(node_namespace_pod_container:container_memory_working_set_bytes{%(clusterSelector)s, node=~"$node",container!=""}) by (pod) / sum(kube_pod_container_resource_requests_memory_bytes{node=~"$node"}) by (pod)' % $._config,
+            'sum(kube_pod_container_resource_limits_memory_bytes{%(clusterSelector)s, node=~"$node"}) by (pod)' % $._config,
+            'sum(node_namespace_pod_container:container_memory_working_set_bytes{%(clusterSelector)s, node=~"$node",container!=""}) by (pod) / sum(kube_pod_container_resource_limits_memory_bytes{node=~"$node"}) by (pod)' % $._config,
+            'sum(node_namespace_pod_container:container_memory_rss{%(clusterSelector)s, node=~"$node",container!=""}) by (pod)' % $._config,
+            'sum(node_namespace_pod_container:container_memory_cache{%(clusterSelector)s, node=~"$node",container!=""}) by (pod)' % $._config,
+            'sum(node_namespace_pod_container:container_memory_swap{%(clusterSelector)s, node=~"$node",container!=""}) by (pod)' % $._config,
           ], tableStyles {
             'Value #A': { alias: 'Memory Usage', unit: 'bytes' },
             'Value #B': { alias: 'Memory Requests', unit: 'bytes' },

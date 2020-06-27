@@ -11,6 +11,7 @@ local template = grafana.template;
         query='label_values(kube_pod_info, %s)' % $._config.clusterLabel,
         current='',
         hide=if $._config.showMultiCluster then '' else '2',
+        multi=if $._config.showMultiCluster then true else false,
         refresh=1,
         includeAll=false,
         sort=1
@@ -20,7 +21,7 @@ local template = grafana.template;
       template.new(
         name='namespace',
         datasource='$datasource',
-        query='label_values(kube_pod_info{%(clusterLabel)s="$cluster"}, namespace)' % $._config.clusterLabel,
+        query='label_values(kube_pod_info{%(clusterSelector)s}, namespace)' % $._config.clusterSelector,
         current='',
         hide='',
         refresh=1,
@@ -32,7 +33,7 @@ local template = grafana.template;
       template.new(
         name='workload',
         datasource='$datasource',
-        query='label_values(mixin_pod_workload{%(clusterLabel)s="$cluster", namespace="$namespace"}, workload)' % $._config.clusterLabel,
+        query='label_values(mixin_pod_workload{%(clusterSelector)s, namespace="$namespace"}, workload)' % $._config.clusterSelector,
         current='',
         hide='',
         refresh=1,
@@ -44,7 +45,7 @@ local template = grafana.template;
       template.new(
         name='type',
         datasource='$datasource',
-        query='label_values(mixin_pod_workload{%(clusterLabel)s="$cluster", namespace="$namespace", workload="$workload"}, workload_type)' % $._config.clusterLabel,
+        query='label_values(mixin_pod_workload{%(clusterSelector)s, namespace="$namespace", workload="$workload"}, workload_type)' % $._config.clusterSelector,
         current='',
         hide='',
         refresh=1,
@@ -61,34 +62,34 @@ local template = grafana.template;
 
       local networkColumns = [
         |||
-          (sum(irate(container_network_receive_bytes_total{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~"$namespace"}[$__interval])
+          (sum(irate(container_network_receive_bytes_total{%(clusterSelector)s, %(namespaceLabel)s=~"$namespace"}[$__interval])
           * on (namespace,pod)
-          group_left(workload,workload_type) mixin_pod_workload{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
+          group_left(workload,workload_type) mixin_pod_workload{%(clusterSelector)s, %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
         ||| % $._config,
         |||
-          (sum(irate(container_network_transmit_bytes_total{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~"$namespace"}[$__interval])
+          (sum(irate(container_network_transmit_bytes_total{%(clusterSelector)s, %(namespaceLabel)s=~"$namespace"}[$__interval])
           * on (namespace,pod)
-          group_left(workload,workload_type) mixin_pod_workload{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
+          group_left(workload,workload_type) mixin_pod_workload{%(clusterSelector)s, %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
         ||| % $._config,
         |||
-          (sum(irate(container_network_receive_packets_total{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~"$namespace"}[$__interval])
+          (sum(irate(container_network_receive_packets_total{%(clusterSelector)s, %(namespaceLabel)s=~"$namespace"}[$__interval])
           * on (namespace,pod)
-          group_left(workload,workload_type) mixin_pod_workload{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
+          group_left(workload,workload_type) mixin_pod_workload{%(clusterSelector)s, %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
         ||| % $._config,
         |||
-          (sum(irate(container_network_transmit_packets_total{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~"$namespace"}[$__interval])
+          (sum(irate(container_network_transmit_packets_total{%(clusterSelector)s, %(namespaceLabel)s=~"$namespace"}[$__interval])
           * on (namespace,pod)
-          group_left(workload,workload_type) mixin_pod_workload{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
+          group_left(workload,workload_type) mixin_pod_workload{%(clusterSelector)s, %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
         ||| % $._config,
         |||
-          (sum(irate(container_network_receive_packets_dropped_total{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~"$namespace"}[$__interval])
+          (sum(irate(container_network_receive_packets_dropped_total{%(clusterSelector)s, %(namespaceLabel)s=~"$namespace"}[$__interval])
           * on (namespace,pod)
-          group_left(workload,workload_type) mixin_pod_workload{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
+          group_left(workload,workload_type) mixin_pod_workload{%(clusterSelector)s, %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
         ||| % $._config,
         |||
-          (sum(irate(container_network_transmit_packets_dropped_total{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~"$namespace"}[$__interval])
+          (sum(irate(container_network_transmit_packets_dropped_total{%(clusterSelector)s, %(namespaceLabel)s=~"$namespace"}[$__interval])
           * on (namespace,pod)
-          group_left(workload,workload_type) mixin_pod_workload{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
+          group_left(workload,workload_type) mixin_pod_workload{%(clusterSelector)s, %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
         ||| % $._config,
       ];
 
@@ -126,17 +127,17 @@ local template = grafana.template;
 
       local cpuUsageQuery = |||
         sum(
-            node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{%(clusterLabel)s="$cluster", namespace="$namespace"}
+            node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{%(clusterSelector)s, namespace="$namespace"}
           * on(namespace,pod)
-            group_left(workload, workload_type) mixin_pod_workload{%(clusterLabel)s="$cluster", namespace="$namespace", workload="$workload", workload_type="$type"}
+            group_left(workload, workload_type) mixin_pod_workload{%(clusterSelector)s, namespace="$namespace", workload="$workload", workload_type="$type"}
         ) by (pod)
       ||| % $._config;
 
       local cpuRequestsQuery = |||
         sum(
-            kube_pod_container_resource_requests_cpu_cores{%(clusterLabel)s="$cluster", namespace="$namespace"}
+            kube_pod_container_resource_requests_cpu_cores{%(clusterSelector)s, namespace="$namespace"}
           * on(namespace,pod)
-            group_left(workload, workload_type) mixin_pod_workload{%(clusterLabel)s="$cluster", namespace="$namespace", workload="$workload", workload_type="$type"}
+            group_left(workload, workload_type) mixin_pod_workload{%(clusterSelector)s, namespace="$namespace", workload="$workload", workload_type="$type"}
         ) by (pod)
       ||| % $._config;
 
@@ -144,9 +145,9 @@ local template = grafana.template;
 
       local memUsageQuery = |||
         sum(
-            container_memory_working_set_bytes{%(clusterLabel)s="$cluster", namespace="$namespace", container!=""}
+            container_memory_working_set_bytes{%(clusterSelector)s, namespace="$namespace", container!=""}
           * on(namespace,pod)
-            group_left(workload, workload_type) mixin_pod_workload{%(clusterLabel)s="$cluster", namespace="$namespace", workload="$workload", workload_type="$type"}
+            group_left(workload, workload_type) mixin_pod_workload{%(clusterSelector)s, namespace="$namespace", workload="$workload", workload_type="$type"}
         ) by (pod)
       ||| % $._config;
       local memRequestsQuery = std.strReplace(cpuRequestsQuery, 'cpu_cores', 'memory_bytes');
@@ -227,9 +228,9 @@ local template = grafana.template;
         .addPanel(
           g.panel('Receive Bandwidth') +
           g.queryPanel(|||
-            (sum(irate(container_network_receive_bytes_total{%(clusterLabel)s="$cluster", namespace=~"$namespace"}[$__interval])
+            (sum(irate(container_network_receive_bytes_total{%(clusterSelector)s, namespace=~"$namespace"}[$__interval])
             * on (namespace,pod)
-            group_left(workload,workload_type) mixin_pod_workload{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
+            group_left(workload,workload_type) mixin_pod_workload{%(clusterSelector)s, %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
           ||| % $._config, '{{pod}}') +
           g.stack +
           { yaxes: g.yaxes('Bps') },
@@ -240,9 +241,9 @@ local template = grafana.template;
         .addPanel(
           g.panel('Transmit Bandwidth') +
           g.queryPanel(|||
-            (sum(irate(container_network_transmit_bytes_total{%(clusterLabel)s="$cluster", namespace=~"$namespace"}[$__interval])
+            (sum(irate(container_network_transmit_bytes_total{%(clusterSelector)s, namespace=~"$namespace"}[$__interval])
             * on (namespace,pod)
-            group_left(workload,workload_type) mixin_pod_workload{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
+            group_left(workload,workload_type) mixin_pod_workload{%(clusterSelector)s, %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
           ||| % $._config, '{{pod}}') +
           g.stack +
           { yaxes: g.yaxes('Bps') },
@@ -253,9 +254,9 @@ local template = grafana.template;
         .addPanel(
           g.panel('Average Container Bandwidth by Pod: Received') +
           g.queryPanel(|||
-            (avg(irate(container_network_receive_bytes_total{%(clusterLabel)s="$cluster", namespace=~"$namespace"}[$__interval])
+            (avg(irate(container_network_receive_bytes_total{%(clusterSelector)s, namespace=~"$namespace"}[$__interval])
             * on (namespace,pod)
-            group_left(workload,workload_type) mixin_pod_workload{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
+            group_left(workload,workload_type) mixin_pod_workload{%(clusterSelector)s, %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
           ||| % $._config, '{{pod}}') +
           g.stack +
           { yaxes: g.yaxes('Bps') },
@@ -266,9 +267,9 @@ local template = grafana.template;
         .addPanel(
           g.panel('Average Container Bandwidth by Pod: Transmitted') +
           g.queryPanel(|||
-            (avg(irate(container_network_transmit_bytes_total{%(clusterLabel)s="$cluster", namespace=~"$namespace"}[$__interval])
+            (avg(irate(container_network_transmit_bytes_total{%(clusterSelector)s, namespace=~"$namespace"}[$__interval])
             * on (namespace,pod)
-            group_left(workload,workload_type) mixin_pod_workload{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
+            group_left(workload,workload_type) mixin_pod_workload{%(clusterSelector)s, %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
           ||| % $._config, '{{pod}}') +
           g.stack +
           { yaxes: g.yaxes('Bps') },
@@ -279,9 +280,9 @@ local template = grafana.template;
         .addPanel(
           g.panel('Rate of Received Packets') +
           g.queryPanel(|||
-            (sum(irate(container_network_receive_packets_total{%(clusterLabel)s="$cluster", namespace=~"$namespace"}[$__interval])
+            (sum(irate(container_network_receive_packets_total{%(clusterSelector)s, namespace=~"$namespace"}[$__interval])
             * on (namespace,pod)
-            group_left(workload,workload_type) mixin_pod_workload{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
+            group_left(workload,workload_type) mixin_pod_workload{%(clusterSelector)s, %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
           ||| % $._config, '{{pod}}') +
           g.stack +
           { yaxes: g.yaxes('Bps') },
@@ -292,9 +293,9 @@ local template = grafana.template;
         .addPanel(
           g.panel('Rate of Transmitted Packets') +
           g.queryPanel(|||
-            (sum(irate(container_network_transmit_packets_total{%(clusterLabel)s="$cluster", namespace=~"$namespace"}[$__interval])
+            (sum(irate(container_network_transmit_packets_total{%(clusterSelector)s, namespace=~"$namespace"}[$__interval])
             * on (namespace,pod)
-            group_left(workload,workload_type) mixin_pod_workload{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
+            group_left(workload,workload_type) mixin_pod_workload{%(clusterSelector)s, %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
           ||| % $._config, '{{pod}}') +
           g.stack +
           { yaxes: g.yaxes('Bps') },
@@ -305,9 +306,9 @@ local template = grafana.template;
         .addPanel(
           g.panel('Rate of Received Packets Dropped') +
           g.queryPanel(|||
-            (sum(irate(container_network_receive_packets_dropped_total{%(clusterLabel)s="$cluster", namespace=~"$namespace"}[$__interval])
+            (sum(irate(container_network_receive_packets_dropped_total{%(clusterSelector)s, namespace=~"$namespace"}[$__interval])
             * on (namespace,pod)
-            group_left(workload,workload_type) mixin_pod_workload{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
+            group_left(workload,workload_type) mixin_pod_workload{%(clusterSelector)s, %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
           ||| % $._config, '{{pod}}') +
           g.stack +
           { yaxes: g.yaxes('Bps') },
@@ -318,9 +319,9 @@ local template = grafana.template;
         .addPanel(
           g.panel('Rate of Transmitted Packets Dropped') +
           g.queryPanel(|||
-            (sum(irate(container_network_transmit_packets_dropped_total{%(clusterLabel)s="$cluster", namespace=~"$namespace"}[$__interval])
+            (sum(irate(container_network_transmit_packets_dropped_total{%(clusterSelector)s, namespace=~"$namespace"}[$__interval])
             * on (namespace,pod)
-            group_left(workload,workload_type) mixin_pod_workload{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
+            group_left(workload,workload_type) mixin_pod_workload{%(clusterSelector)s, %(namespaceLabel)s=~"$namespace", workload=~"$workload", workload_type="$type"}) by (pod))
           ||| % $._config, '{{pod}}') +
           g.stack +
           { yaxes: g.yaxes('Bps') },
