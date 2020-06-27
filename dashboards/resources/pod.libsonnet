@@ -11,6 +11,7 @@ local template = grafana.template;
         query='label_values(kube_pod_info, %s)' % $._config.clusterLabel,
         current='',
         hide=if $._config.showMultiCluster then '' else '2',
+        multi=if $._config.showMultiCluster then true else false,
         refresh=1,
         includeAll=false,
         sort=1

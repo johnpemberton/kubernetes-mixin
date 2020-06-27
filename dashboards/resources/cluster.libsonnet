@@ -11,6 +11,7 @@ local template = grafana.template;
         query='label_values(node_cpu_seconds_total, %s)' % $._config.clusterLabel,
         current='',
         hide=if $._config.showMultiCluster then '' else '2',
+        multi=if $._config.showMultiCluster then true else false,
         refresh=2,
         includeAll=false,
         sort=1
