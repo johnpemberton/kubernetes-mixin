@@ -75,8 +75,6 @@
     // Opt-in to multiCluster dashboards by overriding this and the clusterLabel.
     showMultiCluster: true,
     clusterLabel: 'cluster',
-    // Opt-in to add multiCluster selects in the cluster variable field
-    enableMultiClusterSelect: true,
     clusterSelector: if self.showMultiCluster then '%(clusterLabel)s=~"$cluster"' % self.clusterLabel else '%(clusterSelector)s' % self.clusterLabel,
 
 
