@@ -32,7 +32,7 @@ local template = grafana.template;
       template.new(
         name='workload',
         datasource='$datasource',
-        query='label_values(mixin_pod_workload{%(clusterSelector)s, namespace="$namespace"}, workload)' % $._config.clusterLabel,
+        query='label_values(mixin_pod_workload{%(clusterSelector)s, namespace="$namespace"}, workload)' % $._config.clusterSelector,
         current='',
         hide='',
         refresh=1,
@@ -44,7 +44,7 @@ local template = grafana.template;
       template.new(
         name='type',
         datasource='$datasource',
-        query='label_values(mixin_pod_workload{%(clusterSelector)s, namespace="$namespace", workload="$workload"}, workload_type)' % $._config.clusterLabel,
+        query='label_values(mixin_pod_workload{%(clusterSelector)s, namespace="$namespace", workload="$workload"}, workload_type)' % $._config.clusterSelector,
         current='',
         hide='',
         refresh=1,
