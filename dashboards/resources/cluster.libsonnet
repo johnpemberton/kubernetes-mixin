@@ -39,17 +39,17 @@ local template = grafana.template;
 
 
       local podWorkloadColumns = [
-        'sum(kube_pod_owner{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config,
-        'count(avg(mixin_pod_workload{%(clusterLabel)s="$cluster"}) by (workload, namespace)) by (namespace)' % $._config,
+        'sum(kube_pod_owner{%(clusterSelector)s}) by (namespace)' % $._config,
+        'count(avg(mixin_pod_workload{%(clusterSelector)s}) by (workload, namespace)) by (namespace)' % $._config,
       ];
 
       local networkColumns = [
-        'sum(irate(container_network_receive_bytes_total{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config,
-        'sum(irate(container_network_transmit_bytes_total{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config,
-        'sum(irate(container_network_receive_packets_total{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config,
-        'sum(irate(container_network_transmit_packets_total{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config,
-        'sum(irate(container_network_receive_packets_dropped_total{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config,
-        'sum(irate(container_network_transmit_packets_dropped_total{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config,
+        'sum(irate(container_network_receive_bytes_total{%(clusterSelector)s, %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config,
+        'sum(irate(container_network_transmit_bytes_total{%(clusterSelector)s, %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config,
+        'sum(irate(container_network_receive_packets_total{%(clusterSelector)s, %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config,
+        'sum(irate(container_network_transmit_packets_total{%(clusterSelector)s, %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config,
+        'sum(irate(container_network_receive_packets_dropped_total{%(clusterSelector)s, %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config,
+        'sum(irate(container_network_transmit_packets_dropped_total{%(clusterSelector)s, %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config,
       ];
 
       local networkTableStyles = {
@@ -96,35 +96,35 @@ local template = grafana.template;
          })
         .addPanel(
           g.panel('CPU Utilisation') +
-          g.statPanel('1 - avg(rate(node_cpu_seconds_total{mode="idle", %(clusterLabel)s="$cluster"}[$__interval]))' % $._config) +
+          g.statPanel('1 - avg(rate(node_cpu_seconds_total{mode="idle", %(clusterSelector)s}[$__interval]))' % $._config) +
           { interval: $._config.grafanaK8s.minimumTimeInterval },
         )
         .addPanel(
           g.panel('CPU Requests Commitment') +
-          g.statPanel('sum(kube_pod_container_resource_requests_cpu_cores{%(clusterLabel)s="$cluster"}) / sum(kube_node_status_allocatable_cpu_cores{%(clusterLabel)s="$cluster"})' % $._config)
+          g.statPanel('sum(kube_pod_container_resource_requests_cpu_cores{%(clusterSelector)s}) / sum(kube_node_status_allocatable_cpu_cores{%(clusterSelector)s})' % $._config)
         )
         .addPanel(
           g.panel('CPU Limits Commitment') +
-          g.statPanel('sum(kube_pod_container_resource_limits_cpu_cores{%(clusterLabel)s="$cluster"}) / sum(kube_node_status_allocatable_cpu_cores{%(clusterLabel)s="$cluster"})' % $._config)
+          g.statPanel('sum(kube_pod_container_resource_limits_cpu_cores{%(clusterSelector)s}) / sum(kube_node_status_allocatable_cpu_cores{%(clusterSelector)s})' % $._config)
         )
         .addPanel(
           g.panel('Memory Utilisation') +
-          g.statPanel('1 - sum(:node_memory_MemAvailable_bytes:sum{%(clusterLabel)s="$cluster"}) / sum(kube_node_status_allocatable_memory_bytes{%(clusterLabel)s="$cluster"})' % $._config)
+          g.statPanel('1 - sum(:node_memory_MemAvailable_bytes:sum{%(clusterSelector)s}) / sum(kube_node_status_allocatable_memory_bytes{%(clusterSelector)s})' % $._config)
         )
         .addPanel(
           g.panel('Memory Requests Commitment') +
-          g.statPanel('sum(kube_pod_container_resource_requests_memory_bytes{%(clusterLabel)s="$cluster"}) / sum(kube_node_status_allocatable_memory_bytes{%(clusterLabel)s="$cluster"})' % $._config)
+          g.statPanel('sum(kube_pod_container_resource_requests_memory_bytes{%(clusterSelector)s}) / sum(kube_node_status_allocatable_memory_bytes{%(clusterSelector)s})' % $._config)
         )
         .addPanel(
           g.panel('Memory Limits Commitment') +
-          g.statPanel('sum(kube_pod_container_resource_limits_memory_bytes{%(clusterLabel)s="$cluster"}) / sum(kube_node_status_allocatable_memory_bytes{%(clusterLabel)s="$cluster"})' % $._config)
+          g.statPanel('sum(kube_pod_container_resource_limits_memory_bytes{%(clusterSelector)s}) / sum(kube_node_status_allocatable_memory_bytes{%(clusterSelector)s})' % $._config)
         )
       )
       .addRow(
         g.row('CPU')
         .addPanel(
           g.panel('CPU Usage') +
-          g.queryPanel('sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config, '{{namespace}}') +
+          g.queryPanel('sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{%(clusterSelector)s}) by (namespace)' % $._config, '{{namespace}}') +
           g.stack
         )
       )
@@ -133,11 +133,11 @@ local template = grafana.template;
         .addPanel(
           g.panel('CPU Quota') +
           g.tablePanel(podWorkloadColumns + [
-            'sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config,
-            'sum(kube_pod_container_resource_requests_cpu_cores{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config,
-            'sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{%(clusterLabel)s="$cluster"}) by (namespace) / sum(kube_pod_container_resource_requests_cpu_cores{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config,
-            'sum(kube_pod_container_resource_limits_cpu_cores{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config,
-            'sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{%(clusterLabel)s="$cluster"}) by (namespace) / sum(kube_pod_container_resource_limits_cpu_cores{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config,
+            'sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{%(clusterSelector)s}) by (namespace)' % $._config,
+            'sum(kube_pod_container_resource_requests_cpu_cores{%(clusterSelector)s}) by (namespace)' % $._config,
+            'sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{%(clusterSelector)s}) by (namespace) / sum(kube_pod_container_resource_requests_cpu_cores{%(clusterSelector)s}) by (namespace)' % $._config,
+            'sum(kube_pod_container_resource_limits_cpu_cores{%(clusterSelector)s}) by (namespace)' % $._config,
+            'sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate{%(clusterSelector)s}) by (namespace) / sum(kube_pod_container_resource_limits_cpu_cores{%(clusterSelector)s}) by (namespace)' % $._config,
           ], tableStyles {
             'Value #C': { alias: 'CPU Usage' },
             'Value #D': { alias: 'CPU Requests' },
@@ -152,7 +152,7 @@ local template = grafana.template;
         .addPanel(
           g.panel('Memory Usage (w/o cache)') +
           // Not using container_memory_usage_bytes here because that includes page cache
-          g.queryPanel('sum(container_memory_rss{%(clusterLabel)s="$cluster", container!=""}) by (namespace)' % $._config, '{{namespace}}') +
+          g.queryPanel('sum(container_memory_rss{%(clusterSelector)s, container!=""}) by (namespace)' % $._config, '{{namespace}}') +
           g.stack +
           { yaxes: g.yaxes('bytes') },
         )
@@ -163,11 +163,11 @@ local template = grafana.template;
           g.panel('Requests by Namespace') +
           g.tablePanel(podWorkloadColumns + [
             // Not using container_memory_usage_bytes here because that includes page cache
-            'sum(container_memory_rss{%(clusterLabel)s="$cluster", container!=""}) by (namespace)' % $._config,
-            'sum(kube_pod_container_resource_requests_memory_bytes{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config,
-            'sum(container_memory_rss{%(clusterLabel)s="$cluster", container!=""}) by (namespace) / sum(kube_pod_container_resource_requests_memory_bytes{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config,
-            'sum(kube_pod_container_resource_limits_memory_bytes{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config,
-            'sum(container_memory_rss{%(clusterLabel)s="$cluster", container!=""}) by (namespace) / sum(kube_pod_container_resource_limits_memory_bytes{%(clusterLabel)s="$cluster"}) by (namespace)' % $._config,
+            'sum(container_memory_rss{%(clusterSelector)s, container!=""}) by (namespace)' % $._config,
+            'sum(kube_pod_container_resource_requests_memory_bytes{%(clusterSelector)s}) by (namespace)' % $._config,
+            'sum(container_memory_rss{%(clusterSelector)s, container!=""}) by (namespace) / sum(kube_pod_container_resource_requests_memory_bytes{%(clusterSelector)s}) by (namespace)' % $._config,
+            'sum(kube_pod_container_resource_limits_memory_bytes{%(clusterSelector)s}) by (namespace)' % $._config,
+            'sum(container_memory_rss{%(clusterSelector)s, container!=""}) by (namespace) / sum(kube_pod_container_resource_limits_memory_bytes{%(clusterSelector)s}) by (namespace)' % $._config,
           ], tableStyles {
             'Value #C': { alias: 'Memory Usage', unit: 'bytes' },
             'Value #D': { alias: 'Memory Requests', unit: 'bytes' },
@@ -192,7 +192,7 @@ local template = grafana.template;
         g.row('Network')
         .addPanel(
           g.panel('Receive Bandwidth') +
-          g.queryPanel('sum(irate(container_network_receive_bytes_total{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config, '{{namespace}}') +
+          g.queryPanel('sum(irate(container_network_receive_bytes_total{%(clusterSelector)s, %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config, '{{namespace}}') +
           g.stack +
           { yaxes: g.yaxes('Bps') },
         )
@@ -201,7 +201,7 @@ local template = grafana.template;
         g.row('Network')
         .addPanel(
           g.panel('Transmit Bandwidth') +
-          g.queryPanel('sum(irate(container_network_transmit_bytes_total{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config, '{{namespace}}') +
+          g.queryPanel('sum(irate(container_network_transmit_bytes_total{%(clusterSelector)s, %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config, '{{namespace}}') +
           g.stack +
           { yaxes: g.yaxes('Bps') },
         )
@@ -210,7 +210,7 @@ local template = grafana.template;
         g.row('Network')
         .addPanel(
           g.panel('Average Container Bandwidth by Namespace: Received') +
-          g.queryPanel('avg(irate(container_network_receive_bytes_total{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config, '{{namespace}}') +
+          g.queryPanel('avg(irate(container_network_receive_bytes_total{%(clusterSelector)s, %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config, '{{namespace}}') +
           g.stack +
           { yaxes: g.yaxes('Bps') },
         )
@@ -219,7 +219,7 @@ local template = grafana.template;
         g.row('Network')
         .addPanel(
           g.panel('Average Container Bandwidth by Namespace: Transmitted') +
-          g.queryPanel('avg(irate(container_network_transmit_bytes_total{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config, '{{namespace}}') +
+          g.queryPanel('avg(irate(container_network_transmit_bytes_total{%(clusterSelector)s, %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config, '{{namespace}}') +
           g.stack +
           { yaxes: g.yaxes('Bps') },
         )
@@ -228,7 +228,7 @@ local template = grafana.template;
         g.row('Network')
         .addPanel(
           g.panel('Rate of Received Packets') +
-          g.queryPanel('sum(irate(container_network_receive_packets_total{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config, '{{namespace}}') +
+          g.queryPanel('sum(irate(container_network_receive_packets_total{%(clusterSelector)s, %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config, '{{namespace}}') +
           g.stack +
           { yaxes: g.yaxes('Bps') },
         )
@@ -237,7 +237,7 @@ local template = grafana.template;
         g.row('Network')
         .addPanel(
           g.panel('Rate of Transmitted Packets') +
-          g.queryPanel('sum(irate(container_network_receive_packets_total{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config, '{{namespace}}') +
+          g.queryPanel('sum(irate(container_network_receive_packets_total{%(clusterSelector)s, %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config, '{{namespace}}') +
           g.stack +
           { yaxes: g.yaxes('Bps') },
         )
@@ -246,7 +246,7 @@ local template = grafana.template;
         g.row('Network')
         .addPanel(
           g.panel('Rate of Received Packets Dropped') +
-          g.queryPanel('sum(irate(container_network_receive_packets_dropped_total{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config, '{{namespace}}') +
+          g.queryPanel('sum(irate(container_network_receive_packets_dropped_total{%(clusterSelector)s, %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config, '{{namespace}}') +
           g.stack +
           { yaxes: g.yaxes('Bps') },
         )
@@ -255,7 +255,7 @@ local template = grafana.template;
         g.row('Network')
         .addPanel(
           g.panel('Rate of Transmitted Packets Dropped') +
-          g.queryPanel('sum(irate(container_network_transmit_packets_dropped_total{%(clusterLabel)s="$cluster", %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config, '{{namespace}}') +
+          g.queryPanel('sum(irate(container_network_transmit_packets_dropped_total{%(clusterSelector)s, %(namespaceLabel)s=~".+"}[$__interval])) by (namespace)' % $._config, '{{namespace}}') +
           g.stack +
           { yaxes: g.yaxes('Bps') },
         )
